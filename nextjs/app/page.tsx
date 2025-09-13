@@ -26,7 +26,10 @@ import {
   LinkedIn,
   Twitter,
   CheckCircle,
+  People,
+  DataObject,
 } from '@mui/icons-material';
+import Link from 'next/link';
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
@@ -149,24 +152,27 @@ export default function Home() {
               </Stack>
 
               <Stack direction="row" spacing={3} justifyContent="center">
-                <Button
-                  variant="contained"
-                  size="large"
-                  startIcon={<Code />}
-                  sx={{
-                    px: 4,
-                    py: 1.5,
-                    background: 'linear-gradient(135deg, #00bcd4 0%, #008ba3 100%)',
-                    '&:hover': {
-                      background: 'linear-gradient(135deg, #5ddef4 0%, #00bcd4 100%)',
-                    },
-                  }}
-                >
-                  View Code
-                </Button>
+                <Link href="/users" passHref style={{ textDecoration: 'none' }}>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<People />}
+                    sx={{
+                      px: 4,
+                      py: 1.5,
+                      background: 'linear-gradient(135deg, #00bcd4 0%, #008ba3 100%)',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #5ddef4 0%, #00bcd4 100%)',
+                      },
+                    }}
+                  >
+                    View Users Database
+                  </Button>
+                </Link>
                 <Button
                   variant="outlined"
                   size="large"
+                  startIcon={<DataObject />}
                   sx={{
                     px: 4,
                     py: 1.5,
@@ -178,7 +184,7 @@ export default function Home() {
                     },
                   }}
                 >
-                  Learn More
+                  API Docs
                 </Button>
               </Stack>
             </Box>

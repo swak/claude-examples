@@ -1,0 +1,439 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Production-ready backend infrastructure with Python, MySQL, and AWS services'
+
+Parameters:
+  EnvironmentName:
+    Description: Environment name (dev, staging, prod)
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+  
+  VpcCIDR:
+    Description: CIDR block for VPC
+    Type: String
+    Default: 10.0.0.0/16
+    
+  DatabasePassword:
+    Description: Master password for RDS MySQL instance
+    Type: String
+    NoEcho: true
+    MinLength: 8
+    
+  KeyPairName:
+    Description: EC2 Key Pair for SSH access
+    Type: AWS::EC2::KeyPair::KeyName
+
+Mappings:
+  EnvironmentConfig:
+    dev:
+      InstanceType: t3.micro
+      DBInstanceClass: db.t3.micro
+      MinSize: 1
+      MaxSize: 2
+      DesiredCapacity: 1
+    staging:
+      InstanceType: t3.small
+      DBInstanceClass: db.t3.small
+      MinSize: 2
+      MaxSize: 4
+      DesiredCapacity: 2
+    prod:
+      InstanceType: t3.medium
+      DBInstanceClass: db.t3.small
+      MinSize: 2
+      MaxSize: 10
+      DesiredCapacity: 3
+
+Resources:
+  # VPC and Networking
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-vpc
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-public-subnet-1
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: 10.0.2.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-public-subnet-2
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: 10.0.3.0/24
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-private-subnet-1
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: 10.0.4.0/24
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-private-subnet-2
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-igw
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-public-routes
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet2
+
+  # Security Groups
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Application Load Balancer
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-alb-sg
+
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for EC2 instances
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 10.0.0.0/16
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-ec2-sg
+
+  RDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for RDS MySQL instance
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !Ref EC2SecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-rds-sg
+
+  # RDS MySQL Database
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnet group for RDS MySQL
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-db-subnet-group
+
+  RDSInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: !Sub ${EnvironmentName}-mysql-db
+      DBInstanceClass: !FindInMap [EnvironmentConfig, !Ref EnvironmentName, DBInstanceClass]
+      Engine: mysql
+      EngineVersion: '8.0'
+      MasterUsername: admin
+      MasterUserPassword: !Ref DatabasePassword
+      AllocatedStorage: 20
+      MaxAllocatedStorage: 100
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - !Ref RDSSecurityGroup
+      BackupRetentionPeriod: 7
+      MultiAZ: !If [IsProd, true, false]
+      StorageType: gp2
+      StorageEncrypted: true
+      DeletionProtection: !If [IsProd, true, false]
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-mysql-db
+
+  # ElastiCache Redis
+  RedisSubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      Description: Subnet group for Redis cluster
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+
+  RedisSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Redis cluster
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 6379
+          ToPort: 6379
+          SourceSecurityGroupId: !Ref EC2SecurityGroup
+
+  RedisCluster:
+    Type: AWS::ElastiCache::CacheCluster
+    Properties:
+      CacheNodeType: cache.t3.micro
+      Engine: redis
+      NumCacheNodes: 1
+      VpcSecurityGroupIds:
+        - !Ref RedisSecurityGroup
+      CacheSubnetGroupName: !Ref RedisSubnetGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-redis-cluster
+
+  # S3 Bucket for file storage
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${EnvironmentName}-backend-storage-${AWS::AccountId}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # IAM Role for EC2 instances
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      Policies:
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource: !Sub "${S3Bucket}/*"
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource: !Ref S3Bucket
+
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref EC2Role
+
+  # Launch Template
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub ${EnvironmentName}-launch-template
+      LaunchTemplateData:
+        ImageId: ami-0c02fb55956c7d316  # Amazon Linux 2 AMI
+        InstanceType: !FindInMap [EnvironmentConfig, !Ref EnvironmentName, InstanceType]
+        KeyName: !Ref KeyPairName
+        IamInstanceProfile:
+          Arn: !GetAtt EC2InstanceProfile.Arn
+        SecurityGroupIds:
+          - !Ref EC2SecurityGroup
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            yum update -y
+            yum install -y docker
+            service docker start
+            usermod -a -G docker ec2-user
+            
+            # Install Docker Compose
+            curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+            chmod +x /usr/local/bin/docker-compose
+            
+            # Install CloudWatch Agent
+            yum install -y amazon-cloudwatch-agent
+            
+            # Environment variables
+            echo "DATABASE_URL=mysql+aiomysql://admin:${DatabasePassword}@${RDSInstance.Endpoint.Address}:3306/backend_db" >> /etc/environment
+            echo "REDIS_URL=redis://${RedisCluster.RedisEndpoint.Address}:6379/0" >> /etc/environment
+            echo "AWS_REGION=${AWS::Region}" >> /etc/environment
+            echo "S3_BUCKET=${S3Bucket}" >> /etc/environment
+
+  # Application Load Balancer
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub ${EnvironmentName}-alb
+      Scheme: internet-facing
+      Type: application
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+
+  ALBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub ${EnvironmentName}-tg
+      Port: 8000
+      Protocol: HTTP
+      VpcId: !Ref VPC
+      HealthCheckPath: /health
+      HealthCheckProtocol: HTTP
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref ALBTargetGroup
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+  # Auto Scaling Group
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Sub ${EnvironmentName}-asg
+      VPCZoneIdentifier:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      MinSize: !FindInMap [EnvironmentConfig, !Ref EnvironmentName, MinSize]
+      MaxSize: !FindInMap [EnvironmentConfig, !Ref EnvironmentName, MaxSize]
+      DesiredCapacity: !FindInMap [EnvironmentConfig, !Ref EnvironmentName, DesiredCapacity]
+      TargetGroupARNs:
+        - !Ref ALBTargetGroup
+      HealthCheckType: ELB
+      HealthCheckGracePeriod: 300
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-asg-instance
+          PropagateAtLaunch: true
+
+Conditions:
+  IsProd: !Equals [!Ref EnvironmentName, prod]
+
+Outputs:
+  VPC:
+    Description: VPC ID
+    Value: !Ref VPC
+    Export:
+      Name: !Sub ${EnvironmentName}-VPC
+
+  LoadBalancerDNS:
+    Description: DNS name of the load balancer
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
+    Export:
+      Name: !Sub ${EnvironmentName}-ALB-DNS
+
+  DatabaseEndpoint:
+    Description: RDS MySQL endpoint
+    Value: !GetAtt RDSInstance.Endpoint.Address
+    Export:
+      Name: !Sub ${EnvironmentName}-DB-Endpoint
+
+  RedisEndpoint:
+    Description: Redis cluster endpoint
+    Value: !GetAtt RedisCluster.RedisEndpoint.Address
+    Export:
+      Name: !Sub ${EnvironmentName}-Redis-Endpoint
+
+  S3Bucket:
+    Description: S3 bucket for file storage
+    Value: !Ref S3Bucket
+    Export:
+      Name: !Sub ${EnvironmentName}-S3-Bucket
