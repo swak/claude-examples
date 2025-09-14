@@ -13,6 +13,11 @@ A modern Next.js application demonstrating Claude Code's ability to work with Re
 
 **Technologies:** Next.js 15, React 19, TypeScript, Tailwind CSS
 
+### Backend Python Agent (`backend-python-agent/`)
+A specialized agent configuration for backend development with Python, MySQL, and AWS integration. Includes comprehensive examples for building production-ready, scalable backend systems.
+
+**Technologies:** Python 3.9+, FastAPI, SQLAlchemy, MySQL, Redis, Celery, AWS Services, Docker
+
 ### [More projects coming soon...]
 
 ## 🚀 Getting Started
@@ -127,6 +132,7 @@ When using Claude Code with this repository:
 | Project | Status | Description |
 |---------|--------|-------------|
 | Next.js | ✅ Active | Modern web application with React and TypeScript |
+| Backend Python Agent | ✅ Active | Specialized agent for Python backend development with AWS |
 | [TBD] | 🔜 Planned | Additional demonstrations coming soon |
 
 ---
