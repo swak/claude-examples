@@ -62,3 +62,6 @@ service-account.json
 *.credentials
 auth.json
 secrets.json
+/nextjs/backend/app/__pycache__
+/nextjs/backend/app/__pycache__
+/nextjs/backend/app/routers/__pycache__

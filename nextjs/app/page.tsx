@@ -28,6 +28,10 @@ import {
   CheckCircle,
   People,
   DataObject,
+  SmartToy,
+  Api,
+  PlayArrow,
+  TrendingUp,
 } from '@mui/icons-material';
 import Link from 'next/link';
 
@@ -64,8 +68,8 @@ export default function Home() {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%)',
+        minHeight: 'calc(100vh - 64px)', // Account for navigation height
+        background: 'linear-gradient(135deg, #0f1419 0%, #1a202c 100%)',
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -78,9 +82,9 @@ export default function Home() {
           height: '100%',
           opacity: 0.1,
           background: `
-            radial-gradient(circle at 20% 80%, #00bcd4 0%, transparent 50%),
-            radial-gradient(circle at 80% 20%, #ff6b6b 0%, transparent 50%),
-            radial-gradient(circle at 40% 40%, #00bcd4 0%, transparent 50%)
+            radial-gradient(circle at 20% 80%, #6366f1 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, #8b5cf6 0%, transparent 50%),
+            radial-gradient(circle at 40% 40%, #06b6d4 0%, transparent 50%)
           `,
         }}
       />
@@ -96,7 +100,7 @@ export default function Home() {
                     sx={{ 
                       fontSize: 80, 
                       color: 'primary.main',
-                      filter: 'drop-shadow(0 0 20px rgba(0, 188, 212, 0.5))'
+                      filter: 'drop-shadow(0 0 20px rgba(99, 102, 241, 0.5))'
                     }} 
                   />
                 </Box>
@@ -105,7 +109,7 @@ export default function Home() {
               <Typography
                 variant="h1"
                 sx={{
-                  background: 'linear-gradient(135deg, #00bcd4 0%, #ff6b6b 100%)',
+                  background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
                   backgroundClip: 'text',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
@@ -131,8 +135,8 @@ export default function Home() {
                   px: 4,
                   py: 2,
                   mb: 4,
-                  background: 'rgba(0, 188, 212, 0.1)',
-                  border: '1px solid rgba(0, 188, 212, 0.3)',
+                  background: 'rgba(99, 102, 241, 0.1)',
+                  border: '1px solid rgba(99, 102, 241, 0.3)',
                   borderRadius: 3,
                 }}
               >
@@ -147,11 +151,11 @@ export default function Home() {
               <Stack direction="row" spacing={2} justifyContent="center" sx={{ mb: 4 }}>
                 <Chip label="Next.js 15" color="primary" />
                 <Chip label="Material-UI" color="secondary" />
-                <Chip label="TypeScript" sx={{ bgcolor: '#3178c6', color: 'white' }} />
-                <Chip label="Claude Code" sx={{ bgcolor: '#ff6b6b', color: 'white' }} />
+                <Chip label="TypeScript" color="info" />
+                <Chip label="Claude Code" color="secondary" />
               </Stack>
 
-              <Stack direction="row" spacing={3} justifyContent="center">
+              <Stack direction="row" spacing={2} justifyContent="center" sx={{ flexWrap: 'wrap', gap: 2 }}>
                 <Link href="/users" passHref style={{ textDecoration: 'none' }}>
                   <Button
                     variant="contained"
@@ -160,32 +164,53 @@ export default function Home() {
                     sx={{
                       px: 4,
                       py: 1.5,
-                      background: 'linear-gradient(135deg, #00bcd4 0%, #008ba3 100%)',
+                      background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
                       '&:hover': {
-                        background: 'linear-gradient(135deg, #5ddef4 0%, #00bcd4 100%)',
+                        background: 'linear-gradient(135deg, #818cf8 0%, #6366f1 100%)',
                       },
                     }}
                   >
-                    View Users Database
+                    Users Demo
                   </Button>
                 </Link>
-                <Button
-                  variant="outlined"
-                  size="large"
-                  startIcon={<DataObject />}
-                  sx={{
-                    px: 4,
-                    py: 1.5,
-                    borderColor: 'primary.main',
-                    color: 'primary.main',
-                    '&:hover': {
-                      borderColor: 'primary.light',
-                      bgcolor: 'rgba(0, 188, 212, 0.1)',
-                    },
-                  }}
-                >
-                  API Docs
-                </Button>
+                <Link href="/api-docs" passHref style={{ textDecoration: 'none' }}>
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    startIcon={<Api />}
+                    sx={{
+                      px: 4,
+                      py: 1.5,
+                      borderColor: 'info.main',
+                      color: 'info.main',
+                      '&:hover': {
+                        borderColor: 'info.light',
+                        bgcolor: 'rgba(6, 182, 212, 0.1)',
+                      },
+                    }}
+                  >
+                    API Docs
+                  </Button>
+                </Link>
+                <Link href="/agents" passHref style={{ textDecoration: 'none' }}>
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    startIcon={<SmartToy />}
+                    sx={{
+                      px: 4,
+                      py: 1.5,
+                      borderColor: 'secondary.main',
+                      color: 'secondary.main',
+                      '&:hover': {
+                        borderColor: 'secondary.light',
+                        bgcolor: 'rgba(139, 92, 246, 0.1)',
+                      },
+                    }}
+                  >
+                    AI Agents
+                  </Button>
+                </Link>
               </Stack>
             </Box>
           </Fade>
@@ -226,6 +251,175 @@ export default function Home() {
                 </Grid>
               ))}
             </Grid>
+          </Fade>
+
+          {/* Live Demo Features */}
+          <Fade in={mounted} timeout={2000}>
+            <Paper
+              elevation={10}
+              sx={{
+                p: 4,
+                background: 'rgba(26, 31, 58, 0.8)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: 3,
+                mt: 6,
+              }}
+            >
+              <Typography variant="h4" gutterBottom sx={{ textAlign: 'center', mb: 3 }}>
+                Live Demo Features
+              </Typography>
+              
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={4}>
+                  <Card
+                    sx={{
+                      background: 'rgba(99, 102, 241, 0.1)',
+                      border: '1px solid rgba(99, 102, 241, 0.3)',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: '0 8px 16px rgba(99, 102, 241, 0.3)',
+                      },
+                    }}
+                    component={Link}
+                    href="/users"
+                    style={{ textDecoration: 'none' }}
+                  >
+                    <CardContent sx={{ textAlign: 'center', p: 3 }}>
+                      <People sx={{ fontSize: 48, color: '#6366f1', mb: 2 }} />
+                      <Typography variant="h6" gutterBottom>
+                        User Management System
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Complete CRUD operations with search, filtering, and pagination
+                      </Typography>
+                      <Stack direction="row" spacing={1} justifyContent="center">
+                        <Chip label="FastAPI" size="small" color="primary" />
+                        <Chip label="SQLite" size="small" color="primary" />
+                        <Chip label="MUI Table" size="small" color="primary" />
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                </Grid>
+
+                <Grid item xs={12} md={4}>
+                  <Card
+                    sx={{
+                      background: 'rgba(6, 182, 212, 0.1)',
+                      border: '1px solid rgba(6, 182, 212, 0.3)',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: '0 8px 16px rgba(6, 182, 212, 0.3)',
+                      },
+                    }}
+                    component={Link}
+                    href="/api-docs"
+                    style={{ textDecoration: 'none' }}
+                  >
+                    <CardContent sx={{ textAlign: 'center', p: 3 }}>
+                      <Api sx={{ fontSize: 48, color: '#06b6d4', mb: 2 }} />
+                      <Typography variant="h6" gutterBottom>
+                        Interactive API Documentation
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Live API testing with Swagger UI and ReDoc integration
+                      </Typography>
+                      <Stack direction="row" spacing={1} justifyContent="center">
+                        <Chip label="OpenAPI" size="small" color="info" />
+                        <Chip label="Live Testing" size="small" color="info" />
+                        <Chip label="Curl Examples" size="small" color="info" />
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                </Grid>
+
+                <Grid item xs={12} md={4}>
+                  <Card
+                    sx={{
+                      background: 'rgba(139, 92, 246, 0.1)',
+                      border: '1px solid rgba(139, 92, 246, 0.3)',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: '0 8px 16px rgba(139, 92, 246, 0.3)',
+                      },
+                    }}
+                    component={Link}
+                    href="/agents"
+                    style={{ textDecoration: 'none' }}
+                  >
+                    <CardContent sx={{ textAlign: 'center', p: 3 }}>
+                      <SmartToy sx={{ fontSize: 48, color: '#8b5cf6', mb: 2 }} />
+                      <Typography variant="h6" gutterBottom>
+                        AI Development Agents
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Three specialized agents collaborating on full-stack development
+                      </Typography>
+                      <Stack direction="row" spacing={1} justifyContent="center">
+                        <Chip label="Frontend" size="small" color="success" />
+                        <Chip label="Backend" size="small" color="success" />
+                        <Chip label="Testing" size="small" color="success" />
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+
+              {/* Quick Stats */}
+              <Box sx={{ mt: 4, textAlign: 'center' }}>
+                <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
+                  Development Metrics
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={6} sm={3}>
+                    <Box>
+                      <Typography variant="h4" sx={{ color: '#6366f1', fontWeight: 'bold' }}>
+                        8
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Sample Users
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={6} sm={3}>
+                    <Box>
+                      <Typography variant="h4" sx={{ color: '#06b6d4', fontWeight: 'bold' }}>
+                        5
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        API Endpoints
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={6} sm={3}>
+                    <Box>
+                      <Typography variant="h4" sx={{ color: '#10b981', fontWeight: 'bold' }}>
+                        3
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        AI Agents
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={6} sm={3}>
+                    <Box>
+                      <Typography variant="h4" sx={{ color: '#8b5cf6', fontWeight: 'bold' }}>
+                        100%
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Claude Code
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Box>
+            </Paper>
           </Fade>
 
           {/* Footer */}
