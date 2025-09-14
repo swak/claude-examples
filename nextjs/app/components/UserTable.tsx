@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Table,
   TableBody,
@@ -65,6 +65,12 @@ const UserTable: React.FC = () => {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [searchDebounce, setSearchDebounce] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  // Handle client-side hydration
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Debounce search input
   useEffect(() => {
@@ -75,7 +81,7 @@ const UserTable: React.FC = () => {
     return () => clearTimeout(timer);
   }, [search]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -101,22 +107,22 @@ const UserTable: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, rowsPerPage, searchDebounce, roleFilter]);
 
   useEffect(() => {
     fetchUsers();
-  }, [page, rowsPerPage, searchDebounce, roleFilter]);
+  }, [fetchUsers]);
 
-  const handleChangePage = (event: unknown, newPage: number) => {
+  const handleChangePage = useCallback((event: unknown, newPage: number) => {
     setPage(newPage);
-  };
+  }, []);
 
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChangeRowsPerPage = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
-  };
+  }, []);
 
-  const getRoleColor = (role: string) => {
+  const getRoleColor = useCallback((role: string) => {
     switch (role) {
       case 'admin':
         return 'error';
@@ -127,7 +133,7 @@ const UserTable: React.FC = () => {
       default:
         return 'default';
     }
-  };
+  }, []);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -185,20 +191,22 @@ const UserTable: React.FC = () => {
             sx={{ flexGrow: 1 }}
           />
           
-          <FormControl sx={{ minWidth: 140 }}>
-            <InputLabel>Role</InputLabel>
-            <Select
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              label="Role"
-              startAdornment={<FilterList sx={{ mr: 1 }} />}
-            >
-              <MenuItem value="">All Roles</MenuItem>
-              <MenuItem value="admin">Admin</MenuItem>
-              <MenuItem value="manager">Manager</MenuItem>
-              <MenuItem value="user">User</MenuItem>
-            </Select>
-          </FormControl>
+          {mounted && (
+            <FormControl sx={{ minWidth: 140 }}>
+              <InputLabel>Role</InputLabel>
+              <Select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                label="Role"
+                startAdornment={<FilterList sx={{ mr: 1 }} />}
+              >
+                <MenuItem value="">All Roles</MenuItem>
+                <MenuItem value="admin">Admin</MenuItem>
+                <MenuItem value="manager">Manager</MenuItem>
+                <MenuItem value="user">User</MenuItem>
+              </Select>
+            </FormControl>
+          )}
 
           <Tooltip title="Refresh">
             <IconButton onClick={fetchUsers} disabled={loading}>
@@ -256,7 +264,7 @@ const UserTable: React.FC = () => {
                     <TableCell>
                       <Chip
                         label={user.role}
-                        color={getRoleColor(user.role) as any}
+                        color={getRoleColor(user.role) as 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'}
                         size="small"
                         variant="outlined"
                       />
@@ -302,16 +310,18 @@ const UserTable: React.FC = () => {
         </TableContainer>
 
         {/* Pagination */}
-        <TablePagination
-          component="div"
-          count={total}
-          page={page}
-          onPageChange={handleChangePage}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          rowsPerPageOptions={[5, 10, 25, 50]}
-          sx={{ mt: 2 }}
-        />
+        {mounted && (
+          <TablePagination
+            component="div"
+            count={total}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            sx={{ mt: 2 }}
+          />
+        )}
       </CardContent>
     </Card>
   );

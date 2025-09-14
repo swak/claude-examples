@@ -8,10 +8,18 @@ This repository contains multiple example projects that demonstrate how Claude C
 
 ## 📁 Projects
 
-### Next.js Application (`nextjs/`)
-A modern Next.js application demonstrating Claude Code's ability to work with React, TypeScript, and modern web development workflows.
+### Next.js Full-Stack Demo (`nextjs/`)
+A comprehensive full-stack demonstration application showcasing Claude Code's capabilities in modern web development with AI agent collaboration.
 
-**Technologies:** Next.js 15, React 19, TypeScript, Tailwind CSS
+**Technologies:** Next.js 15, React 19, TypeScript, Material-UI, FastAPI, SQLite, SQLAlchemy
+
+**Features:**
+- Professional indigo/purple design system
+- User management system with CRUD operations
+- Interactive API documentation
+- AI agent collaboration showcase (Frontend, Backend, Testing)
+- Full-stack integration with real-time data
+- Responsive design with glassmorphism effects
 
 ### Backend Python Agent (`backend-python-agent/`)
 A specialized agent configuration for backend development with Python, MySQL, and AWS integration. Includes comprehensive examples for building production-ready, scalable backend systems.
@@ -32,26 +40,40 @@ A specialized agent configuration for backend development with Python, MySQL, an
 
 Each project has its own dependencies and setup. Navigate to the specific project folder and follow these general steps:
 
-#### For Next.js Project
+#### For Next.js Full-Stack Project
 
 ```bash
 # Navigate to the Next.js project
 cd nextjs
 
-# Install dependencies
+# Install frontend dependencies
 npm install
 
-# Run development server
+# Install backend dependencies
+cd backend
+pip install -r requirements.txt
+cd ..
+
+# Run both frontend and backend concurrently
+# Terminal 1 - Frontend (Next.js)
 npm run dev
 
-# Build for production
-npm run build
-
-# Start production server
-npm start
+# Terminal 2 - Backend (FastAPI)
+cd backend
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-The application will be available at `http://localhost:3000`
+**Access Points:**
+- Frontend Application: `http://localhost:3000`
+- Backend API: `http://localhost:8000`
+- Interactive API Docs: `http://localhost:8000/docs`
+- ReDoc Documentation: `http://localhost:8000/redoc`
+
+**Features to Explore:**
+- Home page with live demo sections
+- User management with search and filtering
+- API documentation with live testing
+- AI agents showcase page
 
 #### General Pattern for Node.js Projects
 
@@ -120,18 +142,47 @@ When using Claude Code with this repository:
 4. Test changes locally
 5. Review code with Claude Code before finalizing
 
+## ☁️ Deployment
+
+### Vercel Deployment (Next.js Frontend Only)
+
+The Next.js application is ready for deployment to Vercel:
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy to Vercel
+cd nextjs
+vercel
+
+# Or deploy with build command
+vercel --build-env NODE_ENV=production
+```
+
+**Note:** The FastAPI backend will need to be deployed separately to a platform like Railway, Render, or AWS. Update the frontend API URLs accordingly.
+
+### Local Production Build
+
+```bash
+cd nextjs
+npm run build
+npm start
+```
+
 ## 📌 Notes
 
 - Each demonstration project is self-contained
 - Projects may use different package managers (npm, yarn, pnpm)
 - Check individual project README files for specific requirements
-- Some projects may require additional setup (databases, API keys, etc.)
+- The Next.js demo includes both frontend and backend components
+- For production deployment, consider separating frontend and backend services
 
 ## 🚦 Project Status
 
 | Project | Status | Description |
 |---------|--------|-------------|
-| Next.js | ✅ Active | Modern web application with React and TypeScript |
+| Next.js Full-Stack | ✅ Active | Complete demo with AI agents, user management, API docs |
 | Backend Python Agent | ✅ Active | Specialized agent for Python backend development with AWS |
 | [TBD] | 🔜 Planned | Additional demonstrations coming soon |
 

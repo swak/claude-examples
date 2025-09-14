@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Providers } from "./providers";
+import Navigation from "./components/Navigation";
+import ErrorBoundary from "./components/ErrorBoundary";
 import "./globals.css";
 
 const inter = Inter({
@@ -9,8 +11,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Swak's NextJS Application",
-  description: "A demonstration of Claude Code with Next.js and Material-UI",
+  title: "Claude Code Examples - Full-Stack Demonstration",
+  description: "A comprehensive demonstration of Claude Code's capabilities with Next.js, FastAPI, and Material-UI",
 };
 
 export default function RootLayout({
@@ -21,7 +23,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <Providers>{children}</Providers>
+        <ErrorBoundary>
+          <Providers>
+            <Navigation />
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
+          </Providers>
+        </ErrorBoundary>
       </body>
     </html>
   );
